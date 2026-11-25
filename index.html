@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Punto Tendencia Store</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body { 
+      font-family: 'Inter', sans-serif; 
+      background-color: #F8F8F8; 
+      color: #1A1A1A; 
+    }
+    .font-fashion { font-family: 'Montserrat', sans-serif; }
+    .bg-ocre { background-color: #B38443; }
+    .bg-ocre:hover { background-color: #996F37; }
+    .text-ocre { color: #B38443; }
+    .border-ocre { border-color: #B38443; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col relative pb-20">
+
+  <!-- BARRA SUPERIOR -->
+  <div class="bg-[#000000] text-white text-[11px] py-1.5 px-4 text-center font-medium tracking-wider">
+    ENVÍOS RÁPIDOS Y COMPRA SEGURA EN PUNTO TENDENCIA
+  </div>
+
+  <!-- ENCABEZADO -->
+  <header class="bg-[#000000] border-b border-[#B38443]/30 py-2.5 px-4 sticky top-0 z-30 shadow-md">
+    <div class="max-w-md mx-auto flex justify-between items-center">
+      <div onclick="volverAlCatalogo()" class="cursor-pointer w-[140px] flex items-center">
+        <img src="https://lh3.googleusercontent.com/d/19qluu1jKe3yXxZstJLH3bJVvOj_P3h0h=w1000" alt="Punto Tendencia Store" class="w-full h-auto object-contain">
+      </div>
+      
+      <button onclick="abrirCarritoModal()" class="relative bg-[#1A1A1A] text-white border border-[#B38443]/50 px-3.5 py-2 rounded-lg font-fashion text-xs font-bold flex items-center gap-2 shadow">
+        <span>CART:</span>
+        <span id="badge-carrito-cant" class="bg-[#B38443] text-white text-[10px] font-bold px-1.5 py-0.5 rounded">0</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- CONTENEDOR PRINCIPAL -->
+  <main class="flex-grow max-w-md w-full mx-auto p-4">
+    <div id="vista-catalogo">
+      <div class="mb-3">
+        <input type="text" id="input-buscar" placeholder="BUSCAR PRODUCTOS O MARCAS..." oninput="aplicarFiltrosYOrden()" class="w-full px-4 py-2.5 rounded-none border border-gray-300 bg-white text-xs font-medium uppercase placeholder-gray-400 focus:outline-none focus:border-[#1A1A1A]">
+      </div>
+
+      <div class="flex items-center justify-between gap-2 mb-3">
+        <select id="select-orden" onchange="aplicarFiltrosYOrden()" class="w-1/2 px-3 py-2 bg-white border border-gray-300 text-[11px] font-semibold text-[#1A1A1A] uppercase focus:outline-none">
+          <option value="relevancia">ORDENAR: RELEVANCIA</option>
+          <option value="precio-asc">PRECIO: MENOR A MAYOR</option>
+          <option value="precio-desc">PRECIO: MAYOR A MAYOR</option>
+          <option value="nombre">NOMBRE (A-Z)</option>
+        </select>
+
+        <label class="w-1/2 flex items-center justify-end gap-1.5 text-[11px] font-semibold uppercase text-gray-700 cursor-pointer bg-white px-3 py-2 border border-gray-300">
+          <input type="checkbox" id="check-solo-stock" onchange="aplicarFiltrosYOrden()" class="accent-[#1A1A1A]">
+          <span class="truncate">DISPONIBLES</span>
+        </label>
+      </div>
+
+      <div id="contenedor-chips" class="flex overflow-x-auto space-x-2 pb-3 mb-3 no-scrollbar">
+        <button onclick="seleccionarMarca('TODOS')" class="px-4 py-1.5 text-xs font-bold uppercase whitespace-nowrap bg-[#1A1A1A] text-white">TODOS</button>
+      </div>
+
+      <div id="grid-productos" class="grid grid-cols-2 gap-3">
+        <div class="col-span-2 text-center py-12 text-gray-400 text-xs font-semibold uppercase tracking-wider">Cargando colección...</div>
+      </div>
+    </div>
+
+    <!-- VISTA DETALLE DE PRODUCTO -->
+    <div id="vista-detalles" class="hidden">
+      <nav class="text-[10px] uppercase font-semibold text-gray-400 mb-3 flex items-center gap-1 flex-wrap tracking-wider">
+        <span class="hover:underline cursor-pointer text-gray-700" onclick="volverAlCatalogo()">Inicio</span>
+        <span>/</span>
+        <span id="detail-breadcrumb-marca" class="text-[#B38443]">Marca</span>
+        <span>/</span>
+        <span id="detail-breadcrumb-nombre" class="text-black truncate max-w-[150px]">Producto</span>
+      </nav>
+
+      <button onclick="volverAlCatalogo()" class="mb-3 text-xs font-bold text-white bg-[#1A1A1A] px-3.5 py-1.5 uppercase tracking-wider flex items-center gap-1">
+        ← Volver al Catálogo
+      </button>
+      
+      <div id="detalle-contenido" class="bg-white p-4 border border-gray-200 shadow-sm"></div>
+
+      <div class="mt-6">
+        <h3 class="font-fashion text-xs font-bold mb-3 uppercase tracking-wider text-[#1A1A1A] border-b border-gray-300 pb-1">Productos Relacionados</h3>
+        <div id="grid-relacionados" class="grid grid-cols-2 gap-3"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- MODAL CARRITO -->
+  <div id="modal-carrito" class="fixed inset-0 bg-black/60 z-50 hidden flex justify-end">
+    <div class="w-full max-w-md bg-white h-full flex flex-col shadow-2xl">
+      <div class="bg-[#1A1A1A] text-white p-4 flex justify-between items-center">
+        <h2 class="font-fashion font-bold text-sm tracking-wider uppercase flex items-center gap-2">
+          <span>🛒</span> Carrito de Compras
+        </h2>
+        <button onclick="cerrarCarritoModal()" class="text-white font-bold text-lg px-2">✕</button>
+      </div>
+
+      <div id="lista-carrito-items" class="flex-grow p-4 overflow-y-auto space-y-3 bg-[#F8F8F8]"></div>
+
+      <div class="bg-white p-4 border-t border-gray-200 shadow-lg">
+        <div class="flex justify-between items-center mb-3">
+          <span class="text-xs font-bold uppercase text-gray-600">Total Estimado:</span>
+          <span id="total-carrito-monto" class="text-lg font-extrabold text-[#1A1A1A]">S/ 0.00</span>
+        </div>
+        
+        <button onclick="enviarPedidoWhatsApp()" class="w-full bg-[#1A1A1A] hover:bg-[#B38443] text-white text-xs font-bold py-3 uppercase tracking-widest transition flex items-center justify-center gap-2">
+          <span>PEDIR POR WHATSAPP</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BARRA FLOTANTE INFERIOR -->
+  <div id="bar-flotante-carrito" class="fixed bottom-0 left-0 right-0 bg-[#1A1A1A] text-white border-t border-gray-800 p-3 shadow-2xl z-40 hidden">
+    <div class="max-w-md mx-auto flex items-center justify-between gap-3">
+      <div>
+        <p class="text-[9px] text-gray-400 uppercase font-bold tracking-wider">Total Pedido</p>
+        <p id="bar-total-monto" class="text-sm font-extrabold text-[#B38443]">S/ 0.00</p>
+      </div>
+      <button onclick="abrirCarritoModal()" class="bg-[#B38443] text-white text-xs font-bold px-4 py-2 uppercase tracking-wider hover:bg-[#996F37] transition flex items-center gap-2">
+        <span>VER CARRITO (<span id="bar-cant-items">0</span>)</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    var URL_GOOGLE_SCRIPT = "https://script.google.com/macros/s/AKfycbxnfjXxnVtXvuZJSC4L-sZJnQsEBN4qgvCL_Bx2TN_TkrYmpxb1vS4imEDmrCfVFKoLmw/exec";
+
+    var listaGlobalProductos = [];
+    var marcaSeleccionada = 'TODOS';
+    var carrito = [];
+
+    window.onload = function() {
+      fetch(URL_GOOGLE_SCRIPT)
+        .then(function(response) {
+          return response.json();
+        })
+        .then(function(productos) {
+          listaGlobalProductos = productos || [];
+          renderizarChips();
+          aplicarFiltrosYOrden();
+        })
+        .catch(function(err) {
+          document.getElementById('grid-productos').innerHTML = 
+            '<div class="col-span-2 text-center py-8 text-xs text-red-700 bg-red-50 p-4 border border-red-200">' +
+            '<strong>Error de carga:</strong> Verifica la URL de Google Apps Script y los permisos de acceso.</div>';
+        });
+    };
+
+    function renderizarChips() {
+      var marcasPrioritarias = ["LBEL", "CYZONE", "ESIKA", "UNIQUE", "AVON"];
+      var marcasExistentes = [];
+
+      for (var i = 0; i < listaGlobalProductos.length; i++) {
+        var m = listaGlobalProductos[i].marca;
+        if (m) {
+          var mClean = m.toUpperCase().trim();
+          if (mClean === "L'BEL" || mClean === "L BEL") mClean = "LBEL";
+          if (marcasExistentes.indexOf(mClean) === -1) {
+            marcasExistentes.push(mClean);
+          }
+        }
+      }
+
+      var marcasFinales = marcasPrioritarias.slice();
+      for (var mIdx = 0; mIdx < marcasExistentes.length; mIdx++) {
+        if (marcasFinales.indexOf(marcasExistentes[mIdx]) === -1) {
+          marcasFinales.push(marcasExistentes[mIdx]);
+        }
+      }
+
+      var html = '<button onclick="seleccionarMarca(\'TODOS\')" class="px-4 py-1.5 text-xs font-bold uppercase whitespace-nowrap ' + (marcaSeleccionada === 'TODOS' ? 'bg-[#1A1A1A] text-white' : 'bg-white text-gray-700 border border-gray-300') + '">TODOS</button>';
+      
+      for (var j = 0; j < marcasFinales.length; j++) {
+        var marca = marcasFinales[j];
+        var activo = marcaSeleccionada === marca;
+        html += '<button onclick="seleccionarMarca(\'' + marca + '\')" class="px-4 py-1.5 text-xs font-bold uppercase whitespace-nowrap ' + (activo ? 'bg-[#1A1A1A] text-white' : 'bg-white text-gray-700 border border-gray-300') + '">' + marca + '</button>';
+      }
+      document.getElementById('contenedor-chips').innerHTML = html;
+    }
+
+    function seleccionarMarca(marca) {
+      marcaSeleccionada = marca;
+      renderizarChips();
+      aplicarFiltrosYOrden();
+    }
+
+    function aplicarFiltrosYOrden() {
+      var texto = document.getElementById('input-buscar').value.toLowerCase().trim();
+      var soloStock = document.getElementById('check-solo-stock').checked;
+      var orden = document.getElementById('select-orden').value;
+
+      var filtrados = listaGlobalProductos.filter(function(p) {
+        var pMarcaClean = p.marca ? p.marca.toUpperCase().trim() : '';
+        if (pMarcaClean === "L'BEL" || pMarcaClean === "L BEL") pMarcaClean = "LBEL";
+
+        var coincideTexto = p.producto.toLowerCase().indexOf(texto) !== -1 || pMarcaClean.toLowerCase().indexOf(texto) !== -1;
+        var coincideMarca = marcaSeleccionada === 'TODOS' || pMarcaClean === marcaSeleccionada;
+        var coincideStock = !soloStock || p.stock > 0;
+        
+        return coincideTexto && coincideMarca && coincideStock;
+      });
+
+      if (orden === 'precio-asc') {
+        filtrados.sort((a, b) => a.precioVenta - b.precioVenta);
+      } else if (orden === 'precio-desc') {
+        filtrados.sort((a, b) => b.precioVenta - a.precioVenta);
+      } else if (orden === 'nombre') {
+        filtrados.sort((a, b) => a.producto.localeCompare(b.producto));
+      }
+
+      renderizarCatalogo(filtrados);
+    }
+
+    function renderizarCatalogo(productos) {
+      var grid = document.getElementById('grid-productos');
+      if (productos.length === 0) {
+        grid.innerHTML = '<div class="col-span-2 text-center py-8 text-xs font-semibold text-gray-500 uppercase">No se encontraron productos para esta marca.</div>';
+        return;
+      }
+      
+      var html = '';
+      for (var i = 0; i < productos.length; i++) {
+        var p = productos[i];
+        
+        var badgeStock = p.stock > 0 
+          ? '<span class="bg-[#1A1A1A] text-white text-[9px] font-bold uppercase px-2 py-0.5 tracking-wider">DISPONIBLE</span>' 
+          : '<span class="bg-gray-200 text-gray-500 text-[9px] font-bold uppercase px-2 py-0.5 tracking-wider">SIN STOCK</span>';
+        
+        var imgTag = p.imagenUrl ? '<img src="' + p.imagenUrl + '" alt="' + p.producto + '" class="w-full h-full object-cover">' : '<div class="flex items-center justify-center h-full text-[10px] uppercase font-bold text-gray-300">SIN IMAGEN</div>';
+
+        html += '<div onclick="verDetalle(\'' + p.id + '\')" class="bg-white p-3 border border-gray-200 flex flex-col justify-between cursor-pointer hover:border-[#1A1A1A] transition">' +
+                  '<div>' +
+                    '<div class="relative w-full h-36 bg-gray-50 overflow-hidden mb-2 border border-gray-100">' +
+                      imgTag +
+                      '<div class="absolute top-2 right-2">' + badgeStock + '</div>' +
+                    '</div>' +
+                    '<p class="text-[9px] uppercase tracking-widest text-[#B38443] font-bold">' + p.marca + '</p>' +
+                    '<h2 class="font-fashion text-xs font-bold text-[#1A1A1A] line-clamp-2 mt-0.5 uppercase">' + p.producto + '</h2>' +
+                  '</div>' +
+                  '<div class="mt-3">' +
+                    '<div class="flex justify-between items-center mb-2">' +
+                      '<span class="text-xs font-extrabold text-[#1A1A1A]">S/ ' + p.precioVenta.toFixed(2) + '</span>' +
+                    '</div>' +
+                    '<button onclick="event.stopPropagation(); agregarAlCarrito(\'' + p.id + '\', 1)" ' + (p.stock <= 0 ? 'disabled' : '') + ' class="w-full ' + (p.stock > 0 ? 'bg-[#1A1A1A] hover:bg-[#B38443] text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed') + ' text-[10px] font-bold uppercase tracking-wider py-2 transition">' +
+                      (p.stock > 0 ? 'AGREGAR AL CARRO' : 'AGOTADO') +
+                    '</button>' +
+                  '</div>' +
+                '</div>';
+      }
+      grid.innerHTML = html;
+    }
+
+    function verDetalle(id) {
+      var producto = listaGlobalProductos.find(p => p.id === id);
+      if (!producto) return;
+
+      document.getElementById('detail-breadcrumb-marca').innerText = producto.marca;
+      document.getElementById('detail-breadcrumb-nombre').innerText = producto.producto;
+
+      var badgeStock = producto.stock > 0 
+        ? '<span class="bg-[#1A1A1A] text-white text-[10px] font-bold uppercase px-2.5 py-1 tracking-wider">DISPONIBLE (' + producto.stock + ' EN STOCK)</span>' 
+        : '<span class="bg-gray-200 text-gray-500 text-[10px] font-bold uppercase px-2.5 py-1 tracking-wider">SIN STOCK</span>';
+
+      var imgTag = producto.imagenUrl ? '<img src="' + producto.imagenUrl + '" alt="' + producto.producto + '" class="w-full h-full object-cover">' : '<div class="flex items-center justify-center h-full text-xs text-gray-400">SIN IMAGEN</div>';
+
+      var htmlDetalle = 
+        '<div class="relative w-full h-64 bg-gray-50 overflow-hidden mb-4 border border-gray-100">' +
+          imgTag +
+          '<div class="absolute top-3 right-3">' + badgeStock + '</div>' +
+        '</div>' +
+        '<p class="text-[10px] uppercase tracking-widest text-[#B38443] font-bold mb-1">' + producto.marca + '</p>' +
+        '<h2 class="font-fashion text-base font-extrabold text-[#1A1A1A] mb-2 leading-tight uppercase">' + producto.producto + '</h2>' +
+        
+        '<div class="flex items-baseline gap-3 my-3">' +
+          '<span class="text-2xl font-extrabold text-[#1A1A1A]">S/ ' + producto.precioVenta.toFixed(2) + '</span>' +
+          '<span class="text-[10px] font-bold text-[#B38443] uppercase tracking-wider">★★★★★ 4.9 (RESEÑAS)</span>' +
+        '</div>' +
+
+        (producto.stock > 0 ? 
+        '<div class="flex items-center gap-3 mb-4">' +
+          '<span class="text-xs font-bold uppercase text-gray-700">CANTIDAD:</span>' +
+          '<div class="flex items-center border border-gray-300 bg-white">' +
+            '<button onclick="modificarCantidadDetalle(-1)" class="px-3 py-1 text-gray-700 font-bold hover:bg-gray-100">-</button>' +
+            '<span id="cant-detalle-val" class="px-3 py-1 text-xs font-extrabold text-[#1A1A1A]">1</span>' +
+            '<button onclick="modificarCantidadDetalle(1, ' + producto.stock + ')" class="px-3 py-1 text-gray-700 font-bold hover:bg-gray-100">+</button>' +
+          '</div>' +
+        '</div>' : '') +
+
+        '<div class="space-y-2 mb-6">' +
+          (producto.stock > 0 ? 
+          '<button onclick="agregarAlCarrito(\'' + producto.id + '\', getCantDetalleVal()); abrirCarritoModal();" class="w-full bg-[#1A1A1A] hover:bg-[#B38443] text-white text-xs font-bold py-3 uppercase tracking-widest transition shadow">' +
+            '<span>AGREGAR AL CARRO</span>' +
+          '</button>' +
+          '<button onclick="comprarAhoraDirecto(\'' + producto.id + '\')" class="w-full bg-[#B38443] hover:bg-[#996F37] text-white text-xs font-bold py-3 uppercase tracking-widest transition shadow">' +
+            '<span>COMPRAR AHORA</span>' +
+          '</button>' : 
+          '<button disabled class="w-full bg-gray-200 text-gray-400 text-xs font-bold py-3 uppercase tracking-wider cursor-not-allowed">AGOTADO</button>') +
+        '</div>' +
+
+        '<div class="border-t border-gray-200 pt-4 space-y-2.5 text-xs text-gray-700 uppercase font-medium">' +
+          '<div class="flex items-center gap-2.5">' +
+            '<span class="text-base">🏬</span>' +
+            '<span><strong>Stock garantizado:</strong> listo para despacho</span>' +
+          '</div>' +
+          '<div class="flex items-center gap-2.5">' +
+            '<span class="text-base">🚚</span>' +
+            '<span><strong>Envíos a todo el país</strong></span>' +
+          '</div>' +
+          '<div class="flex items-center gap-2.5">' +
+            '<span class="text-base">🛡️</span>' +
+            '<span><strong>Garantía de calidad oficial</strong></span>' +
+          '</div>' +
+        '</div>' +
+
+        '<div class="mt-4 pt-3 border-t border-gray-200">' +
+          '<h4 class="font-bold text-xs uppercase text-[#1A1A1A] mb-1">Detalles:</h4>' +
+          '<p class="text-xs text-gray-600 leading-relaxed">' + (producto.detalles || 'Sin detalles especificados.') + '</p>' +
+        '</div>';
+
+      document.getElementById('detalle-contenido').innerHTML = htmlDetalle;
+      renderizarRelacionados(producto);
+
+      document.getElementById('vista-detalles').classList.remove('hidden');
+      document.getElementById('vista-catalogo').classList.add('hidden');
+      window.scrollTo(0, 0);
+    }
+
+    function getCantDetalleVal() {
+      var elem = document.getElementById('cant-detalle-val');
+      return elem ? parseInt(elem.innerText) : 1;
+    }
+
+    function modificarCantidadDetalle(delta, maxStock) {
+      var elem = document.getElementById('cant-detalle-val');
+      if (!elem) return;
+      var actual = parseInt(elem.innerText) || 1;
+      var nuevo = actual + delta;
+      if (nuevo >= 1 && nuevo <= maxStock) {
+        elem.innerText = nuevo;
+      }
+    }
+
+    function agregarAlCarrito(id, cantidad) {
+      var producto = listaGlobalProductos.find(p => p.id === id);
+      if (!producto || producto.stock <= 0) return;
+
+      var itemExistente = carrito.find(item => item.id === id);
+      if (itemExistente) {
+        var nuevaCant = itemExistente.cantidad + cantidad;
+        if (nuevaCant <= producto.stock) {
+          itemExistente.cantidad = nuevaCant;
+        } else {
+          itemExistente.cantidad = producto.stock;
+          alert('Has alcanzado el límite de stock disponible.');
+        }
+      } else {
+        carrito.push({
+          id: producto.id,
+          nombre: producto.producto,
+          precio: producto.precioVenta,
+          cantidad: Math.min(cantidad, producto.stock),
+          maxStock: producto.stock,
+          imagenUrl: producto.imagenUrl
+        });
+      }
+      actualizarCarritoUI();
+    }
+
+    function modificarCantidadCarrito(id, delta) {
+      var item = carrito.find(i => i.id === id);
+      if (!item) return;
+
+      var nuevaCant = item.cantidad + delta;
+      if (nuevaCant <= 0) {
+        carrito = carrito.filter(i => i.id !== id);
+      } else if (nuevaCant <= item.maxStock) {
+        item.cantidad = nuevaCant;
+      } else {
+        alert('Límite de stock disponible alcanzado.');
+      }
+      actualizarCarritoUI();
+    }
+
+    function actualizarCarritoUI() {
+      var totalCant = 0;
+      var totalMonto = 0;
+
+      for (var i = 0; i < carrito.length; i++) {
+        totalCant += carrito[i].cantidad;
+        totalMonto += (carrito[i].precio * carrito[i].cantidad);
+      }
+
+      document.getElementById('badge-carrito-cant').innerText = totalCant;
+      document.getElementById('bar-cant-items').innerText = totalCant;
+      document.getElementById('total-carrito-monto').innerText = 'S/ ' + totalMonto.toFixed(2);
+      document.getElementById('bar-total-monto').innerText = 'S/ ' + totalMonto.toFixed(2);
+
+      var barFlotante = document.getElementById('bar-flotante-carrito');
+      if (totalCant > 0) {
+        barFlotante.classList.remove('hidden');
+      } else {
+        barFlotante.classList.add('hidden');
+      }
+
+      renderizarListaCarritoModal();
+    }
+
+    function renderizarListaCarritoModal() {
+      var contenedor = document.getElementById('lista-carrito-items');
+      if (carrito.length === 0) {
+        contenedor.innerHTML = '<div class="text-center py-12 text-gray-400 text-xs uppercase font-bold tracking-wider">Tu carrito está vacío.</div>';
+        return;
+      }
+
+      var html = '';
+      for (var i = 0; i < carrito.length; i++) {
+        var item = carrito[i];
+        var imgTag = item.imagenUrl ? '<img src="' + item.imagenUrl + '" class="w-full h-full object-cover">' : '<div class="bg-gray-100 w-full h-full"></div>';
+
+        html += '<div class="bg-white p-3 border border-gray-200 flex items-center justify-between gap-3">' +
+                  '<div class="w-12 h-12 flex-shrink-0 bg-gray-50 border border-gray-100 overflow-hidden">' + imgTag + '</div>' +
+                  '<div class="flex-grow min-w-0">' +
+                    '<h4 class="font-fashion text-xs font-bold text-[#1A1A1A] uppercase truncate">' + item.nombre + '</h4>' +
+                    '<p class="text-xs font-extrabold text-[#B38443]">S/ ' + item.precio.toFixed(2) + '</p>' +
+                  '</div>' +
+                  '<div class="flex items-center gap-2 border border-gray-300 bg-gray-50 px-2 py-1">' +
+                    '<button onclick="modificarCantidadCarrito(\'' + item.id + '\', -1)" class="text-gray-700 font-bold text-xs">-</button>' +
+                    '<span class="text-xs font-extrabold text-[#1A1A1A]">' + item.cantidad + '</span>' +
+                    '<button onclick="modificarCantidadCarrito(\'' + item.id + '\', 1)" class="text-gray-700 font-bold text-xs">+</button>' +
+                  '</div>' +
+                '</div>';
+      }
+      contenedor.innerHTML = html;
+    }
+
+    function abrirCarritoModal() {
+      document.getElementById('modal-carrito').classList.remove('hidden');
+    }
+
+    function cerrarCarritoModal() {
+      document.getElementById('modal-carrito').classList.add('hidden');
+    }
+
+    function comprarAhoraDirecto(id) {
+      var cantidad = getCantDetalleVal();
+      agregarAlCarrito(id, cantidad);
+      enviarPedidoWhatsApp();
+    }
+
+    function enviarPedidoWhatsApp() {
+      if (carrito.length === 0) {
+        alert('Tu carrito está vacío.');
+        return;
+      }
+
+      var mensaje = 'Hola *Punto Tendencia*, deseo realizar el siguiente pedido:\n\n';
+      var totalMonto = 0;
+
+      for (var i = 0; i < carrito.length; i++) {
+        var item = carrito[i];
+        var subtotal = item.precio * item.cantidad;
+        totalMonto += subtotal;
+        mensaje += '• ' + item.nombre + ' x' + item.cantidad + ' = S/ ' + subtotal.toFixed(2) + '\n';
+      }
+
+      mensaje += '\n*MONTO TOTAL A PAGAR:* S/ ' + totalMonto.toFixed(2);
+      mensaje += '\n\nQuedo a la espera de confirmación para el envío.';
+
+      var linkWsp = 'https://wa.me/51924512605?text=' + encodeURIComponent(mensaje);
+      window.open(linkWsp, '_blank');
+    }
+
+    function renderizarRelacionados(prodActual) {
+      var relacionados = listaGlobalProductos.filter(p => p.id !== prodActual.id && p.marca === prodActual.marca);
+      if (relacionados.length === 0) {
+        relacionados = listaGlobalProductos.filter(p => p.id !== prodActual.id).slice(0, 2);
+      }
+
+      var gridRel = document.getElementById('grid-relacionados');
+      if (relacionados.length === 0) {
+        gridRel.innerHTML = '<p class="col-span-2 text-xs text-gray-400">No hay productos relacionados.</p>';
+        return;
+      }
+
+      var html = '';
+      for (var k = 0; k < relacionados.length; k++) {
+        var rel = relacionados[k];
+        var imgRel = rel.imagenUrl ? '<img src="' + rel.imagenUrl + '" alt="' + rel.producto + '" class="w-full h-full object-cover">' : '<div class="flex items-center justify-center h-full text-[10px] text-gray-400">SIN IMAGEN</div>';
+        html += '<div onclick="verDetalle(\'' + rel.id + '\')" class="bg-[#FFFFFF] p-2.5 border border-gray-200 cursor-pointer hover:border-[#1A1A1A] transition">' +
+                  '<div class="w-full h-28 bg-gray-50 overflow-hidden mb-2 border border-gray-100">' +
+                    imgRel +
+                  '</div>' +
+                  '<h4 class="font-fashion text-[11px] font-bold text-[#1A1A1A] uppercase truncate">' + rel.producto + '</h4>' +
+                  '<p class="text-[11px] font-extrabold text-[#1A1A1A] mt-1">S/ ' + rel.precioVenta.toFixed(2) + '</p>' +
+                '</div>';
+      }
+      gridRel.innerHTML = html;
+    }
+
+    function volverAlCatalogo() {
+      document.getElementById('vista-detalles').classList.add('hidden');
+      document.getElementById('vista-catalogo').classList.remove('hidden');
+      window.scrollTo(0, 0);
+    }
+  </script>
+</body>
+</html>
